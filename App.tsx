@@ -394,7 +394,7 @@ const ComparisonTable: React.FC<{ files: ProcessableFile[] }> = ({ files }) => {
                         {fields.map((field) => {
                             return (
                                 <tr key={field.key} className="group transition-colors hover:bg-brand-gray-700/30 even:bg-brand-gray-800/30 odd:bg-brand-gray-800/10">
-                                    <th scope="row" className="px-6 py-5 font-bold text-brand-gray-200 sticky right-0 z-10 border-l border-brand-gray-700 bg-brand-gray-800 shadow-[4px_0_24px_-2px_rgba(0,0,0,0.5)] group-hover:bg-brand-gray-800/90 transition-colors text-right align-top">
+                                    <th className="px-6 py-5 font-bold text-brand-gray-200 sticky right-0 z-10 border-l border-brand-gray-700 bg-brand-gray-800 shadow-[4px_0_24px_-2px_rgba(0,0,0,0.5)] group-hover:bg-brand-gray-800/90 transition-colors text-right align-top">
                                         <div className="flex items-center gap-2 mt-1">
                                              <span className="w-1.5 h-1.5 rounded-full bg-brand-blue-light/50 group-hover:bg-brand-blue-light transition-colors flex-shrink-0"></span>
                                              <span className="tracking-wide">{field.label}</span>
@@ -496,7 +496,7 @@ function App() {
             if (onProgress) onProgress(100);
             return { inlineData: { mimeType: result.mimeType || type, data: result.content } };
         } 
-        else if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) {
+        else if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) { // Corrected MIME type
             result = await processFileWithWorker(file, 'docx');
             if (onProgress) onProgress(100);
             return { text: result.content };
@@ -705,14 +705,14 @@ function App() {
     setIsLoading(false);
   }, [processableFiles]);
   
-  const getFileIcon = (file: File) => {
+  const getFileIcon = (file: File, className: string) => {
     const { type, name } = file;
-    if (type.startsWith('image/')) return <ImageIcon className="w-6 h-6" />;
-    if (type === 'application/pdf') return <PdfIcon className="w-6 h-6" />;
-    if (type.includes('word') || name.endsWith('.docx')) return <WordIcon className="w-6 h-6" />;
-    if (type.includes('excel') || type.includes('spreadsheet') || name.endsWith('.xlsx') || name.endsWith('.xls')) return <ExcelIcon className="w-6 h-6" />;
-    if (type.startsWith('text/') || name.endsWith('.txt')) return <TextIcon className="w-6 h-6" />;
-    return <FileIcon className="w-6 h-6" />;
+    if (type.startsWith('image/')) return <ImageIcon className={className} />;
+    if (type === 'application/pdf') return <PdfIcon className={className} />;
+    if (type.includes('word') || name.endsWith('.docx')) return <WordIcon className={className} />;
+    if (type.includes('excel') || type.includes('spreadsheet') || name.endsWith('.xlsx') || name.endsWith('.xls')) return <ExcelIcon className={className} />;
+    if (type.startsWith('text/') || name.endsWith('.txt')) return <TextIcon className={className} />;
+    return <FileIcon className={className} />;
   };
 
   const renderStatusIndicator = (status: ProcessableFile['status'], errorMsg?: string) => {
@@ -752,8 +752,7 @@ function App() {
                         />
                         {singleFile && <div className="flex items-center justify-between w-full max-w-md bg-brand-gray-800 px-4 py-3 rounded-lg border border-brand-gray-700 shadow-md animate-slide-in-fade-in">
                             <div className="flex items-center gap-3 overflow-hidden">
-                                {/* Removed the 'title' prop from React.cloneElement as it's redundant with the adjacent span */}
-                                {React.cloneElement(getFileIcon(singleFile) as React.ReactElement<{ className?: string }>, { className: "w-6 h-6" })}
+                                {getFileIcon(singleFile, "w-6 h-6")}
                                 <span className="text-sm text-brand-gray-300 truncate font-medium" title={singleFile.name}>{singleFile.name}</span>
                             </div>
                             <button onClick={() => { setSingleFile(null); handleClear(); }} className="text-gray-500 hover:text-red-400 p-1.5 rounded-full hover:bg-brand-gray-700 transition-colors"><TrashIcon className="h-4 w-4" /></button>
@@ -791,7 +790,7 @@ function App() {
                                         <div key={pf.id} className="group relative flex items-center gap-3 p-2 bg-brand-gray-800 border border-brand-gray-700 rounded-lg hover:border-brand-blue-light/50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-200 h-14 overflow-hidden cursor-default">
                                             {/* Icon */}
                                             <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-brand-gray-700/40 rounded-md text-brand-gray-300">
-                                                {React.cloneElement(getFileIcon(pf.file) as React.ReactElement<{ className?: string }>, { className: "w-5 h-5" })}
+                                                {getFileIcon(pf.file, "w-5 h-5")}
                                             </div>
 
                                             {/* Info */}
