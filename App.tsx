@@ -433,7 +433,7 @@ const ComparisonTable: React.FC<{ files: ProcessableFile[] }> = ({ files }) => {
                                             </button>
                                         </div>
                                     </div>
-                                </td>
+                                </th>
                             ))}
                         </tr>
                     </thead>
