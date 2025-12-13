@@ -47,7 +47,17 @@ export const extractDataFromFile = async (contentPart: Part): Promise<ExtractedD
     const data = JSON.parse(jsonText) as ExtractedData;
 
     // تطبيق قواعد التنسيق المطلوبة (Capitalization)
-    if (data.beneficiaryName) data.beneficiaryName = data.beneficiaryName.toUpperCase();
+    if (data.beneficiaryName) {
+      // Format beneficiaryName: remove special characters, keep letters, numbers, and spaces
+      // Use \p{L} for Unicode letters and \s for whitespace
+      data.beneficiaryName = data.beneficiaryName.replace(/[^0-9\p{L}\s]/gu, '').toUpperCase();
+    }
+
+    // تنسيق رقم الحساب: إزالة المسافات والفواصل والشرطات
+    if (data.accountNumber) {
+      data.accountNumber = data.accountNumber.replace(/[\s\-\_]/g, '');
+    }
+
     if (data.country) data.country = data.country.toUpperCase();
     if (data.province) data.province = data.province.toUpperCase();
     if (data.city) data.city = data.city.toUpperCase();

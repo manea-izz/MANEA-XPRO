@@ -78,25 +78,51 @@ const Toast: React.FC<{ message: string; show: boolean }> = ({ message, show }) 
     );
 };
 
-const ProgressBar: React.FC<{ progress: number; label: string; estimatedTime?: string | null }> = ({ progress, label, estimatedTime }) => (
+const ProgressBar: React.FC<{ progress: number; label: string; estimatedTime?: string | null }> = ({ progress, label, estimatedTime }) => {
+    const percentage = Math.min(100, Math.max(0, progress));
+    const isFinishing = percentage >= 95;
+
+    return (
     <div className="w-full max-w-md mx-auto mt-6 animate-slide-in-fade-in">
-        <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-brand-blue-light">{label}</span>
-            <span className="text-sm font-medium text-brand-blue-light">{Math.min(100, Math.max(0, progress))}%</span>
+        <div className="flex justify-between mb-2 items-end">
+            <span className="text-sm font-bold text-brand-blue-light tracking-wide">{label}</span>
+            <span className={`text-sm font-bold font-mono transition-colors duration-300 ${percentage === 100 ? 'text-green-400' : 'text-brand-blue-light'}`}>
+                {percentage}%
+            </span>
         </div>
-        <div className="w-full bg-brand-gray-700 rounded-full h-2.5 overflow-hidden">
-            <div 
-                className="bg-gradient-to-r from-brand-blue to-brand-blue-light h-2.5 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(0,180,216,0.5)]" 
-                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-            ></div>
+        
+        {/* Progress Track */}
+        <div className="w-full bg-brand-gray-900 rounded-full h-4 p-[2px] shadow-inner border border-brand-gray-700/50">
+            <div className="h-full w-full rounded-full overflow-hidden relative">
+                 {/* Animated Gradient Bar */}
+                 <div 
+                    className={`
+                        h-full rounded-full transition-all duration-500 ease-out
+                        bg-gradient-to-r from-blue-600 via-brand-blue to-cyan-400
+                        shadow-[0_0_15px_rgba(6,182,212,0.5)]
+                        relative
+                        ${isFinishing ? 'animate-pulse shadow-[0_0_25px_rgba(34,211,238,0.8)] brightness-110' : ''}
+                    `}
+                    style={{ width: `${percentage}%` }}
+                >
+                    {/* Glossy highlight */}
+                    <div className="absolute top-0 left-0 right-0 h-[40%] bg-white/20 rounded-t-full"></div>
+                    
+                    {/* Shimmer animation */}
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full animate-shimmer"></div>
+                </div>
+            </div>
         </div>
+        
         {estimatedTime && (
-            <p className="text-xs text-brand-gray-400 mt-2 text-right dir-rtl">
-                ⏱️ الوقت المتبقي التقريبي: {estimatedTime}
+            <p className="text-xs text-brand-gray-400 mt-2 text-right dir-rtl flex justify-end items-center gap-1.5 opacity-80">
+                <span className={percentage < 100 ? "animate-spin" : ""}>⏳</span>
+                <span>الوقت المتبقي: <span className="font-mono text-brand-gray-300">{estimatedTime}</span></span>
             </p>
         )}
     </div>
-);
+    );
+};
 
 const DropZone: React.FC<{ onFilesSelect: (files: File[]) => void; multiple: boolean; disabled: boolean; label: string }> = ({ onFilesSelect, multiple, disabled, label }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -166,6 +192,9 @@ const ResultCard: React.FC<{ title: string; data: EnrichedData | null; showCompa
     const [showToast, setShowToast] = useState(false);
 
     if (!data) return null;
+
+    // Check for banned swift globally in the card
+    const hasBannedSwift = data.swiftCode && BANNED_SWIFTS.includes(data.swiftCode);
     
     // Updated fields order and labels
     const dataFields: { key: keyof ExtractedData; label: string }[] = [
@@ -174,8 +203,8 @@ const ResultCard: React.FC<{ title: string; data: EnrichedData | null; showCompa
       { key: 'swiftCode', label: 'سويفت البنك' },
       { key: 'bankName', label: 'أسم البنك' },
       { key: 'country', label: 'الدولة' },
+      { key: 'province', label: 'المقاطعة أو الولاية' }, // Updated label and order
       { key: 'city', label: 'المدينة' },
-      { key: 'province', label: 'المقاطعة أو الولاية' }, // Updated label
       { key: 'address', label: 'العنوان' },
     ];
     
@@ -215,8 +244,26 @@ const ResultCard: React.FC<{ title: string; data: EnrichedData | null; showCompa
     };
   
     return (
-      <div className="bg-brand-gray-800 p-6 rounded-xl shadow-lg w-full h-fit flex flex-col transition-all duration-300 border border-brand-gray-700 relative">
+      <div className={`bg-brand-gray-800 p-6 rounded-xl shadow-lg w-full h-fit flex flex-col transition-all duration-300 border ${hasBannedSwift ? 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)]' : 'border-brand-gray-700'} relative`}>
         <Toast message="تم نسخ البيانات بنجاح" show={showToast} />
+        
+        {/* Warning Banner for Banned Swift */}
+        {hasBannedSwift && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3 animate-slide-in-fade-in">
+                <div className="bg-red-500/20 p-2 rounded-full flex-shrink-0 text-red-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 className="text-sm font-bold text-red-400">تحذير أمني: بنك محظور</h4>
+                    <p className="text-xs text-brand-gray-300 mt-1 leading-relaxed">
+                        رمز السويفت المستخرج ({data.swiftCode}) مدرج في قائمة الحظر. يرجى الحذر عند التعامل مع هذا البنك لتجنب أي مشكلات في الحوالات المالية.
+                    </p>
+                </div>
+            </div>
+        )}
+
         <h3 className="text-xl font-bold text-brand-blue-light mb-4">{title}</h3>
         
         {/* Extracted Data Section */}
@@ -249,7 +296,7 @@ const ResultCard: React.FC<{ title: string; data: EnrichedData | null; showCompa
                                 <p className="text-xs font-semibold text-brand-gray-400 uppercase tracking-wider mb-1">{label}</p>
                                 <p className={`${isBannedSwift ? 'text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'text-brand-gray-100'} text-right font-mono text-sm break-all`}>
                                     {value}
-                                    {isBannedSwift && <span className="block text-[10px] text-red-400 font-normal mt-1">⚠️ محظور (البنك الأهلي)</span>}
+                                    {isBannedSwift && <span className="block text-[10px] text-red-400 font-bold mt-1 bg-red-500/10 p-1 rounded w-fit mr-auto">⚠️ محظور التعامل معه</span>}
                                 </p>
                            </div>
                          );
@@ -314,8 +361,8 @@ const ComparisonTable: React.FC<{ files: ProcessableFile[] }> = ({ files }) => {
       { key: 'swiftCode', label: 'سويفت البنك', isMono: true },
       { key: 'bankName', label: 'أسم البنك' },
       { key: 'country', label: 'الدولة' },
+      { key: 'province', label: 'المقاطعة أو الولاية' }, // Updated label and order
       { key: 'city', label: 'المدينة' },
-      { key: 'province', label: 'المقاطعة أو الولاية' }, // Updated label
       { key: 'address', label: 'العنوان' },
     ];
 
@@ -417,7 +464,7 @@ const ComparisonTable: React.FC<{ files: ProcessableFile[] }> = ({ files }) => {
                                                   {val ? (
                                                       <>
                                                         {val}
-                                                        {isBannedSwift && <span className="block text-[10px] text-red-400 font-normal mt-1 whitespace-nowrap">⚠️ محظور</span>}
+                                                        {isBannedSwift && <span className="block text-[10px] text-red-400 font-bold mt-1 whitespace-nowrap bg-red-500/10 px-1 rounded w-fit mx-auto">⚠️ بنك محظور</span>}
                                                       </>
                                                   ) : <span className="text-brand-gray-600 opacity-30 select-none text-xl font-light">−</span>}
                                                </div>
